@@ -165,19 +165,19 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
     mcpUnitTool<CreateRepeaterTab>("Creates an HTTP/1.1 Repeater tab with the specified raw HTTP request and optional tab name. Make sure to use carriage returns appropriately. Prefer create_repeater_tab_http2 for modern web targets that speak HTTP/2.") {
         val fixedContent = normalizeHttpContent(content)
         val request = HttpRequest.httpRequest(toMontoyaService(), fixedContent)
-        api.repeater().sendToRepeater(request, tabName)
+        if (tabName == null) api.repeater().sendToRepeater(request) else api.repeater().sendToRepeater(request, tabName)
     }
 
     mcpUnitTool<CreateRepeaterTabHttp2>("Creates an HTTP/2 Repeater tab with the specified HTTP/2 request and optional tab name. Use this by default for modern web targets. Do NOT pass headers to the body parameter.") {
         val headerList = buildHttp2HeaderList(pseudoHeaders, headers)
         val request = HttpRequest.http2Request(toMontoyaService(), headerList, requestBody)
-        api.repeater().sendToRepeater(request, tabName)
+        if (tabName == null) api.repeater().sendToRepeater(request) else api.repeater().sendToRepeater(request, tabName)
     }
 
     mcpUnitTool<SendToIntruder>("Sends an HTTP request to Intruder with the specified HTTP request and optional tab name. Make sure to use carriage returns appropriately.") {
         val fixedContent = normalizeHttpContent(content)
         val request = HttpRequest.httpRequest(toMontoyaService(), fixedContent)
-        api.intruder().sendToIntruder(request, tabName)
+        if (tabName == null) api.intruder().sendToIntruder(request) else api.intruder().sendToIntruder(request, tabName)
     }
 
     mcpTool<UrlEncode>("URL encodes the input string") {
@@ -446,7 +446,7 @@ data class SendHttp2Request(
 
 @Serializable
 data class CreateRepeaterTab(
-    val tabName: String?,
+    val tabName: String? = null,
     val content: String,
     override val targetHostname: String,
     override val targetPort: Int,
@@ -455,7 +455,7 @@ data class CreateRepeaterTab(
 
 @Serializable
 data class CreateRepeaterTabHttp2(
-    val tabName: String?,
+    val tabName: String? = null,
     val pseudoHeaders: Map<String, String>,
     val headers: Map<String, String>,
     val requestBody: String,
@@ -466,7 +466,7 @@ data class CreateRepeaterTabHttp2(
 
 @Serializable
 data class SendToIntruder(
-    val tabName: String?,
+    val tabName: String? = null,
     val content: String,
     override val targetHostname: String,
     override val targetPort: Int,

@@ -1,13 +1,13 @@
-Uuid: 9952290f04ed4f628e624d0aa9dccebc 
+Uuid: B17AE866-D4C0-41BC-8BFA-9B2A7FBEA507 
 ExtensionType: 1
-Name: MCP Server
-RepoName: mcp-server
-ScreenVersion: 1.3.0
-SerialVersion: 10
+Name: Burp Suite Complete MCP
+RepoName: burpsuite-complete-mcp
+ScreenVersion: 2.0.0
+SerialVersion: 1
 MinPlatformVersion: 26
 ProOnly: False
-Author: Daniel S, PortSwigger & Daniel Allen, PortSwigger
-ShortDescription: Integrate Burp Suite with AI Clients using the Model Context Protocol (MCP).
-EntryPoint: burp-mcp-all.jar
+Author: Abhishek Meena
+ShortDescription: Full read/write access to Burp Suite (including Repeater and Intruder) for AI agents via MCP.
+EntryPoint: burpsuite-complete-mcp-all.jar
 BuildCommand: ./gradlew embedProxyJar
 SupportedProducts: Pro, Community

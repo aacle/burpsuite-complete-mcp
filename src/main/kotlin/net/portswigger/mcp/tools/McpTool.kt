@@ -27,7 +27,7 @@ inline fun <reified I : Any> Server.mcpTool(
         try {
             CallToolResult(
                 content = execute(
-                    Json.decodeFromJsonElement(
+                    lenientJson.decodeFromJsonElement(
                         serializer,
                         request.params.arguments ?: JsonObject(emptyMap())
                     )
@@ -43,6 +43,12 @@ inline fun <reified I : Any> Server.mcpTool(
     }
 
     addTool(name = toolName, description = description, inputSchema = inputSchema, handler = handler)
+}
+
+private val lenientJson = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+    isLenient = true
 }
 
 @OptIn(ExperimentalTypeInference::class)
