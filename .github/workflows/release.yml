@@ -37,7 +37,7 @@ jobs:
         run: echo "path=$(find build/libs -name 'burpsuite-complete-mcp-all.jar' -print -quit)" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ steps.artifact.outputs.path }}
           generate_release_notes: true
