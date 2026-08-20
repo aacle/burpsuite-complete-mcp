@@ -401,6 +401,8 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
 
         "Editor text has been set"
     }
+
+    registerRepeaterTools(api, config)
 }
 
 fun getActiveEditor(api: MontoyaApi): JTextArea? {

@@ -7,12 +7,13 @@ import net.portswigger.mcp.config.McpConfig
 import net.portswigger.mcp.providers.ClaudeDesktopProvider
 import net.portswigger.mcp.providers.ManualProxyInstallerProvider
 import net.portswigger.mcp.providers.ProxyJarManager
+import net.portswigger.mcp.shadow.ExchangeShadowStore
 
 @Suppress("unused")
 class ExtensionBase : BurpExtension {
 
     override fun initialize(api: MontoyaApi) {
-        api.extension().setName("Burp MCP Server")
+        api.extension().setName("Burp Suite Complete MCP")
 
         val config = McpConfig(api.persistence().extensionData(), api.logging())
         val serverManager = KtorServerManager(api)
@@ -30,6 +31,7 @@ class ExtensionBase : BurpExtension {
             configUi.getConfig()
 
             if (enabled) {
+                ExchangeShadowStore.start(api)
                 serverManager.start(config) { state ->
                     configUi.updateServerState(state)
                 }
@@ -37,6 +39,7 @@ class ExtensionBase : BurpExtension {
                 serverManager.stop { state ->
                     configUi.updateServerState(state)
                 }
+                ExchangeShadowStore.stop()
             }
         }
 
@@ -44,11 +47,13 @@ class ExtensionBase : BurpExtension {
 
         api.extension().registerUnloadingHandler {
             serverManager.shutdown()
+            ExchangeShadowStore.stop()
             configUi.cleanup()
             config.cleanup()
         }
 
         if (config.enabled) {
+            ExchangeShadowStore.start(api)
             serverManager.start(config) { state ->
                 configUi.updateServerState(state)
             }
