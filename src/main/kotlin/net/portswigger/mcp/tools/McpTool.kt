@@ -45,7 +45,8 @@ inline fun <reified I : Any> Server.mcpTool(
     addTool(name = toolName, description = description, inputSchema = inputSchema, handler = handler)
 }
 
-private val lenientJson = Json {
+@PublishedApi
+internal val lenientJson = Json {
     ignoreUnknownKeys = true
     coerceInputValues = true
     isLenient = true
