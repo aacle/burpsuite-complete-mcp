@@ -1,5 +1,6 @@
 package net.portswigger.mcp.config
 
+import burp.api.montoya.MontoyaApi
 import io.ktor.util.network.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,15 +8,25 @@ import kotlinx.coroutines.launch
 import net.portswigger.mcp.ServerState
 import net.portswigger.mcp.Swing
 import net.portswigger.mcp.config.components.*
+import net.portswigger.mcp.dashboard.ActivityPanel
+import net.portswigger.mcp.dashboard.DashboardPanel
+import net.portswigger.mcp.dashboard.ScansPanel
+import net.portswigger.mcp.dashboard.ToolsPanel
+import net.portswigger.mcp.dashboard.TrafficPanel
 import net.portswigger.mcp.providers.Provider
 import java.awt.BorderLayout
 import java.awt.Component.CENTER_ALIGNMENT
-import java.awt.GridBagLayout
+import java.awt.Component.LEFT_ALIGNMENT
 import javax.swing.*
-import javax.swing.Box.*
+import javax.swing.Box.createVerticalGlue
+import javax.swing.Box.createVerticalStrut
 import javax.swing.JOptionPane.ERROR_MESSAGE
 
-class ConfigUi(private val config: McpConfig, private val providers: List<Provider>) {
+class ConfigUi(
+    private val api: MontoyaApi,
+    private val config: McpConfig,
+    private val providers: List<Provider>
+) {
 
     private val panel = JPanel(BorderLayout())
     val component: JComponent get() = panel
@@ -50,8 +61,16 @@ class ConfigUi(private val config: McpConfig, private val providers: List<Provid
     private lateinit var autoApproveTargetsPanel: AutoApproveTargetsPanel
     private lateinit var installationPanel: InstallationPanel
 
+    private val dashboardPanel = DashboardPanel(api, config)
+    private val activityPanel = ActivityPanel()
+    private val trafficPanel = TrafficPanel()
+    private val scansPanel = ScansPanel()
+    private val toolsPanel = ToolsPanel()
+
     private var toggleListener: ((Boolean) -> Unit)? = null
     private var suppressToggleEvents: Boolean = false
+
+    private val refreshTimer = Timer(2000) { refreshLivePanels() }
 
     private val dataAccessRefreshListener: () -> Unit = {
         SwingUtilities.invokeLater {
@@ -66,6 +85,9 @@ class ConfigUi(private val config: McpConfig, private val providers: List<Provid
 
         initializeComponents()
         buildUi()
+
+        refreshLivePanels()
+        refreshTimer.start()
     }
 
     private fun initializeComponents() {
@@ -92,6 +114,7 @@ class ConfigUi(private val config: McpConfig, private val providers: List<Provid
     }
 
     fun cleanup() {
+        refreshTimer.stop()
         listenerHandles.forEach { it.remove() }
         listenerHandles.clear()
 
@@ -111,6 +134,8 @@ class ConfigUi(private val config: McpConfig, private val providers: List<Provid
     }
 
     fun updateServerState(state: ServerState) {
+        dashboardPanel.updateServerState(state)
+
         CoroutineScope(Dispatchers.Swing).launch {
             suppressToggleEvents = true
 
@@ -153,62 +178,85 @@ class ConfigUi(private val config: McpConfig, private val providers: List<Provid
         }
     }
 
-    private fun buildUi() {
-        val leftPanel = JPanel(GridBagLayout())
+    private fun refreshLivePanels() {
+        dashboardPanel.refresh()
+        activityPanel.refresh()
+        trafficPanel.refresh()
+        scansPanel.refresh()
+        toolsPanel.refresh()
+    }
 
-        val headerBox = createVerticalBox().apply {
+    private fun buildUi() {
+        val header = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isOpaque = false
+            alignmentX = CENTER_ALIGNMENT
+            border = BorderFactory.createEmptyBorder(
+                Design.Spacing.MD, Design.Spacing.LG, Design.Spacing.SM, Design.Spacing.LG
+            )
+
             add(JLabel("Burp Suite Complete MCP").apply {
-                font = Design.Typography.headlineMedium
+                font = Design.Typography.titleMedium
                 foreground = Design.Colors.onSurface
                 alignmentX = CENTER_ALIGNMENT
             })
-            add(createVerticalStrut(Design.Spacing.MD))
-            add(JLabel("Full read/write access to Burp Suite for AI clients, including Repeater and Intruder.").apply {
-                font = Design.Typography.bodyLarge
+            add(createVerticalStrut(Design.Spacing.SM))
+            add(JLabel("Drive Burp from an AI agent and watch its work here.").apply {
+                font = Design.Typography.bodyMedium
                 foreground = Design.Colors.onSurfaceVariant
                 alignmentX = CENTER_ALIGNMENT
             })
-            add(createVerticalStrut(Design.Spacing.MD))
-            add(
-                Anchor(
-                    text = "Learn more about the Model Context Protocol",
-                    url = "https://modelcontextprotocol.io/introduction"
-                ).apply { alignmentX = CENTER_ALIGNMENT })
         }
+        panel.add(header, BorderLayout.NORTH)
 
-        leftPanel.add(headerBox)
+        val tabs = JTabbedPane().apply {
+            addTab("Dashboard", dashboardPanel)
+            addTab("Activity", activityPanel)
+            addTab("Traffic", trafficPanel)
+            addTab("Scans", scansPanel)
+            addTab("Tools", toolsPanel)
+            addTab("Configuration", buildConfigurationTab())
+            addTab("Installation", wrapInPaddedPanel(installationPanel))
+        }
+        panel.add(tabs, BorderLayout.CENTER)
+    }
 
-        val rightPanelContent = JPanel().apply {
+    private fun buildConfigurationTab(): JComponent {
+        val content = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Design.Colors.surface
-            border = BorderFactory.createEmptyBorder(
-                Design.Spacing.LG, Design.Spacing.LG, Design.Spacing.LG, Design.Spacing.LG
-            )
+            alignmentX = LEFT_ALIGNMENT
+
+            add(serverConfigurationPanel)
+            add(createVerticalStrut(Design.Spacing.LG))
+            add(autoApproveTargetsPanel)
+            add(createVerticalStrut(15))
+            add(advancedOptionsPanel)
+            add(createVerticalStrut(Design.Spacing.MD))
+            add(reinstallNotice)
+            add(createVerticalGlue())
         }
 
-        val rightPanel = JScrollPane(rightPanelContent).apply {
+        return JScrollPane(content).apply {
             border = null
             background = Design.Colors.surface
             viewport.background = Design.Colors.surface
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
             verticalScrollBar.unitIncrement = 16
+            border = BorderFactory.createEmptyBorder(
+                Design.Spacing.LG, Design.Spacing.LG, Design.Spacing.LG, Design.Spacing.LG
+            )
         }
+    }
 
-        rightPanelContent.add(serverConfigurationPanel)
-        rightPanelContent.add(createVerticalStrut(Design.Spacing.LG))
-
-        rightPanelContent.add(autoApproveTargetsPanel)
-
-        rightPanelContent.add(createVerticalStrut(15))
-        rightPanelContent.add(advancedOptionsPanel)
-        rightPanelContent.add(createVerticalGlue())
-        rightPanelContent.add(reinstallNotice)
-        rightPanelContent.add(createVerticalStrut(10))
-
-        rightPanelContent.add(installationPanel)
-
-        val columnsPanel = ResponsiveColumnsPanel(leftPanel, rightPanel)
-        panel.add(columnsPanel, BorderLayout.CENTER)
+    private fun wrapInPaddedPanel(child: JComponent): JComponent {
+        return JPanel(BorderLayout()).apply {
+            isOpaque = false
+            border = BorderFactory.createEmptyBorder(
+                Design.Spacing.LG, Design.Spacing.LG, Design.Spacing.LG, Design.Spacing.LG
+            )
+            add(child, BorderLayout.NORTH)
+        }
     }
 }

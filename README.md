@@ -40,6 +40,9 @@ See [`SPEC.md`](SPEC.md) for the full design and tool catalog, and [`docs/BUGFIX
 Then use the in-extension **MCP** tab to one-click configure your client (Claude Desktop, OpenCode,
 Copilot CLI, Codex CLI), or point any MCP client at `http://127.0.0.1:9876` (SSE) or use the packaged stdio proxy.
 
+The **MCP tab is a live control room**: a Dashboard (server status + stats), an Activity feed of every
+AI action, a Traffic view of captured exchanges, a Scans monitor, and a searchable Tools catalog.
+
 ## Build from source
 
 ```bash

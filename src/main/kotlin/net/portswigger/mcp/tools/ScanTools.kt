@@ -20,6 +20,14 @@ import java.util.concurrent.atomic.AtomicLong
  */
 object ScanTaskRegistry {
 
+    data class ScanTaskInfo(
+        val id: Long,
+        val status: String,
+        val requests: Int,
+        val errors: Int,
+        val issues: Int?
+    )
+
     private val tasks = ConcurrentHashMap<Long, ScanTask>()
     private val nextId = AtomicLong(0)
 
@@ -32,6 +40,18 @@ object ScanTaskRegistry {
     fun get(id: Long): ScanTask? = tasks[id]
 
     fun remove(id: Long): ScanTask? = tasks.remove(id)
+
+    fun list(): List<ScanTaskInfo> = tasks.entries
+        .map { (id, task) ->
+            ScanTaskInfo(
+                id = id,
+                status = task.statusMessage(),
+                requests = task.requestCount(),
+                errors = task.errorCount(),
+                issues = (task as? Audit)?.issues()?.size
+            )
+        }
+        .sortedBy { it.id }
 }
 
 private fun buildGetRequest(url: String): HttpRequest {

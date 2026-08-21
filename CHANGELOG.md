@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.2.0] - 2026-08-21
+
+### Added
+- **MCP tab control room** — the MCP tab is now a tabbed dashboard, not just config:
+  - **Dashboard** — server status, host:port, edition, tool count, traffic captured, active scans
+  - **Activity** — live feed of every AI action (tool + result, errors in red)
+  - **Traffic** — table of the exchange shadow store (source / method / url / status)
+  - **Scans** — live crawl/audit status with a Stop button
+  - **Tools** — searchable catalog of every MCP tool and description
+- Central `ActivityLog` and `ToolCatalog` singletons, hooked into every tool's registration/invocation.
+
 ## [2.1.0] - 2026-08-21
 
 ### Added

@@ -11,6 +11,8 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
+import net.portswigger.mcp.ActivityLog
+import net.portswigger.mcp.ToolCatalog
 import net.portswigger.mcp.schema.asInputSchema
 import kotlin.experimental.ExperimentalTypeInference
 
@@ -23,18 +25,23 @@ inline fun <reified I : Any> Server.mcpTool(
     val serializer = I::class.serializer()
     val inputSchema = I::class.asInputSchema()
 
+    ToolCatalog.register(toolName, description)
+
     val handler: suspend (ClientConnection, CallToolRequest) -> CallToolResult = { _, request ->
         try {
-            CallToolResult(
-                content = execute(
-                    lenientJson.decodeFromJsonElement(
-                        serializer,
-                        request.params.arguments ?: JsonObject(emptyMap())
-                    )
-                ),
-                isError = false
+            val result = execute(
+                lenientJson.decodeFromJsonElement(
+                    serializer,
+                    request.params.arguments ?: JsonObject(emptyMap())
+                )
             )
+            val summary = result.filterIsInstance<TextContent>()
+                .joinToString(" ") { it.text }
+                .let { ActivityLog.summarize(it) }
+            ActivityLog.add(toolName, summary, isError = false)
+            CallToolResult(content = result, isError = false)
         } catch (e: Exception) {
+            ActivityLog.add(toolName, "Error: ${e.message}", isError = true)
             CallToolResult(
                 content = listOf(TextContent("Error: ${e.message}")),
                 isError = true
@@ -123,8 +130,20 @@ inline fun Server.mcpTool(
     description: String,
     crossinline execute: () -> List<ContentBlock>
 ) {
+    ToolCatalog.register(name, description)
+
     val handler: suspend (ClientConnection, CallToolRequest) -> CallToolResult = { _, _ ->
-        CallToolResult(content = execute(), isError = false)
+        try {
+            val result = execute()
+            val summary = result.filterIsInstance<TextContent>()
+                .joinToString(" ") { it.text }
+                .let { ActivityLog.summarize(it) }
+            ActivityLog.add(name, summary, isError = false)
+            CallToolResult(content = result, isError = false)
+        } catch (e: Exception) {
+            ActivityLog.add(name, "Error: ${e.message}", isError = true)
+            CallToolResult(content = listOf(TextContent("Error: ${e.message}")), isError = true)
+        }
     }
     addTool(name = name, description = description, inputSchema = ToolSchema(), handler = handler)
 }
@@ -134,8 +153,17 @@ inline fun Server.mcpTool(
     description: String,
     crossinline execute: () -> String
 ) {
+    ToolCatalog.register(name, description)
+
     val handler: suspend (ClientConnection, CallToolRequest) -> CallToolResult = { _, _ ->
-        CallToolResult(content = listOf(TextContent(execute())), isError = false)
+        try {
+            val result = execute()
+            ActivityLog.add(name, ActivityLog.summarize(result), isError = false)
+            CallToolResult(content = listOf(TextContent(result)), isError = false)
+        } catch (e: Exception) {
+            ActivityLog.add(name, "Error: ${e.message}", isError = true)
+            CallToolResult(content = listOf(TextContent("Error: ${e.message}")), isError = true)
+        }
     }
     addTool(name = name, description = description, inputSchema = ToolSchema(), handler = handler)
 }
