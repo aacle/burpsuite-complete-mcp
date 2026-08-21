@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.0] - 2026-08-21
+
+### Added
+- **Intruder staging + custom payloads** — `create_intruder_attack` (payload positions via `HttpRequestTemplate`), `set_intruder_payloads`, and a registered "MCP Payloads" `PayloadGeneratorProvider`.
+
 ## [2.0.0] - 2026-08-21
 
 A GPLv3 fork of [`portswigger/mcp-server`](https://github.com/portswigger/mcp-server), upgraded and extended.

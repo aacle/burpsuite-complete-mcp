@@ -2,8 +2,8 @@ Uuid: B17AE866-D4C0-41BC-8BFA-9B2A7FBEA507
 ExtensionType: 1
 Name: Burp Suite Complete MCP
 RepoName: burpsuite-complete-mcp
-ScreenVersion: 2.0.0
-SerialVersion: 1
+ScreenVersion: 2.1.0
+SerialVersion: 2
 MinPlatformVersion: 26
 ProOnly: False
 Author: Abhishek Meena
