@@ -5,7 +5,10 @@ import burp.api.montoya.MontoyaApi
 import net.portswigger.mcp.config.ConfigUi
 import net.portswigger.mcp.config.McpConfig
 import net.portswigger.mcp.providers.ClaudeDesktopProvider
+import net.portswigger.mcp.providers.CodexCliProvider
+import net.portswigger.mcp.providers.CopilotCliProvider
 import net.portswigger.mcp.providers.ManualProxyInstallerProvider
+import net.portswigger.mcp.providers.OpenCodeProvider
 import net.portswigger.mcp.providers.ProxyJarManager
 import net.portswigger.mcp.shadow.ExchangeShadowStore
 
@@ -23,6 +26,9 @@ class ExtensionBase : BurpExtension {
         val configUi = ConfigUi(
             config = config, providers = listOf(
                 ClaudeDesktopProvider(api.logging(), proxyJarManager),
+                OpenCodeProvider(api.logging(), proxyJarManager),
+                CopilotCliProvider(api.logging(), proxyJarManager),
+                CodexCliProvider(api.logging(), proxyJarManager),
                 ManualProxyInstallerProvider(api.logging(), proxyJarManager),
             )
         )
