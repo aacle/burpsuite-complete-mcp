@@ -72,6 +72,6 @@ For that, Burp must be:
 
 - ✅ Done: Repeater read/stage · Intruder positions + results · scanner crawl/audit/status · by-id history · truncation fix · contract fixes · installers (Claude/OpenCode/Copilot/Codex).
 - ✅ Done (P0): scope tools (`is_in_scope`/`add_to_scope`/`remove_from_scope`) · cookie jar (`get_cookies`/`set_cookie`).
-- ✅ Done (P2 partial): notes + highlight (`set_history_item_notes`/`set_history_item_highlight`).
-- ✅ Done (P1 partial): `get_proxy_http_history_summary` (compact listing; summarize-then-zoom).
-- ⏭ Next: sitemap read · MCP sends visible in sitemap (#117/#90) · `send_to_organizer`/`send_to_comparer` · `send_http_requests_batch` (RequestExecutionEngine) · Streamable HTTP + auth.
+- ✅ Done (P1): `get_proxy_http_history_summary` (summarize-then-zoom) · `get_sitemap` (passive recon) · MCP sends visible in sitemap (#117/#90).
+- ✅ Done (P2): notes + highlight (`set_history_item_notes`/`set_history_item_highlight`) · `send_to_organizer_by_id` · `send_to_comparer_by_id`.
+- ⏭ Next: `send_http_requests_batch` (RequestExecutionEngine) · Streamable HTTP + auth · `logging/setLevel` · fix `get_scanner_issues` (#37) · `export_findings` report.
