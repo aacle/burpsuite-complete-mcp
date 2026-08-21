@@ -422,6 +422,8 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
 
     registerRepeaterTools(api, config)
     registerIntruderTools(api, config)
+    registerScopeSessionTools(api, config)
+    registerAnnotationTools(api, config)
 }
 
 fun getActiveEditor(api: MontoyaApi): JTextArea? {
