@@ -7,7 +7,7 @@ A GPLv3 fork of [`portswigger/mcp-server`](https://github.com/portswigger/mcp-se
 ### Added
 - **Repeater read access** — `list_repeater_tabs`, `read_repeater_tab_request`, `read_repeater_tab_response`, `send_repeater_request`.
   Backed by an exchange shadow store (`registerHttpHandler`) and a Swing UI bridge, since the Montoya API has no Repeater read access.
-- **Intruder read access** — `get_intruder_attack_results` reads shadow-store INTRUDER traffic.
+- **Intruder read + staging** — `create_intruder_attack` (payload positions + custom payloads), `set_intruder_payloads`, and `get_intruder_attack_results` (reads shadow-store INTRUDER traffic). Custom payloads are served by a registered "MCP Payloads" `PayloadGeneratorProvider`.
 - **Scanner control** — `start_crawl`, `start_audit`, `get_scan_status`, `stop_scan` (Professional only).
 - **`get_proxy_http_history_by_id`** — address history by Burp request id, not just offset.
 - **One-click installers** for OpenCode, Copilot CLI, and Codex CLI (in addition to Claude Desktop).

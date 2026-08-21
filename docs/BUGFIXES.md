@@ -18,6 +18,7 @@ Mapping of confirmed upstream `portswigger/mcp-server` issues to fixes in this f
 | #100 / #112 | History items truncated at 5000 chars; responses dropped | Configurable `historyItemMaxChars`/`historyFieldMaxChars` + per-field truncation |
 | #111 / #30 | History only addressable by offset | `get_proxy_http_history_by_id` + request `id` in history items |
 | #63 / #50 | No scan/crawl/audit control | `start_crawl` / `start_audit` / `get_scan_status` / `stop_scan` |
+| #92 / #48 | Intruder payload stubs ignored / no custom payload list | `create_intruder_attack` (positions + payloads) + `set_intruder_payloads` + "MCP Payloads" generator |
 | #84 / #85 / #86 | Only Claude Desktop installer | Added OpenCode, Copilot CLI, Codex CLI installers |
 
 ## Planned (later phases)

@@ -2,8 +2,10 @@ package net.portswigger.mcp
 
 import burp.api.montoya.BurpExtension
 import burp.api.montoya.MontoyaApi
+import burp.api.montoya.core.Registration
 import net.portswigger.mcp.config.ConfigUi
 import net.portswigger.mcp.config.McpConfig
+import net.portswigger.mcp.intruder.McpPayloadGeneratorProvider
 import net.portswigger.mcp.providers.ClaudeDesktopProvider
 import net.portswigger.mcp.providers.CodexCliProvider
 import net.portswigger.mcp.providers.CopilotCliProvider
@@ -20,6 +22,9 @@ class ExtensionBase : BurpExtension {
 
         val config = McpConfig(api.persistence().extensionData(), api.logging())
         val serverManager = KtorServerManager(api)
+
+        val intruderPayloadRegistration: Registration =
+            api.intruder().registerPayloadGeneratorProvider(McpPayloadGeneratorProvider())
 
         val proxyJarManager = ProxyJarManager(api.logging())
 
@@ -54,6 +59,7 @@ class ExtensionBase : BurpExtension {
         api.extension().registerUnloadingHandler {
             serverManager.shutdown()
             ExchangeShadowStore.stop()
+            intruderPayloadRegistration.deregister()
             configUi.cleanup()
             config.cleanup()
         }
