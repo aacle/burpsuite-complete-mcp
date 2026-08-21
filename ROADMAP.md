@@ -71,4 +71,7 @@ For that, Burp must be:
 ## Status
 
 - ✅ Done: Repeater read/stage · Intruder positions + results · scanner crawl/audit/status · by-id history · truncation fix · contract fixes · installers (Claude/OpenCode/Copilot/Codex).
-- ⏭ Next: P0 (scope + cookie jar) → P1 (field selection + sitemap + visible sends) → P2 (notes/highlight/organizer/comparer).
+- ✅ Done (P0): scope tools (`is_in_scope`/`add_to_scope`/`remove_from_scope`) · cookie jar (`get_cookies`/`set_cookie`).
+- ✅ Done (P2 partial): notes + highlight (`set_history_item_notes`/`set_history_item_highlight`).
+- ✅ Done (P1 partial): `get_proxy_http_history_summary` (compact listing; summarize-then-zoom).
+- ⏭ Next: sitemap read · MCP sends visible in sitemap (#117/#90) · `send_to_organizer`/`send_to_comparer` · `send_http_requests_batch` (RequestExecutionEngine) · Streamable HTTP + auth.

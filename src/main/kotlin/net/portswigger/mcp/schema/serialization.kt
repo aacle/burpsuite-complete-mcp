@@ -54,6 +54,19 @@ fun ProxyHttpRequestResponse.toSerializableForm(): HttpRequestResponse {
     )
 }
 
+fun ProxyHttpRequestResponse.toSummaryForm(): String {
+    val status = response()?.statusCode()?.toInt()
+    val mime = mimeType()?.name
+    val notes = annotations().notes()
+    return buildString {
+        append("id=").append(id())
+        append(" | ").append(method()).append(' ').append(url())
+        if (status != null) append(" -> ").append(status)
+        if (mime != null && mime != "NONE") append(" [").append(mime).append(']')
+        if (!notes.isNullOrBlank()) append("  notes: ").append(notes)
+    }
+}
+
 fun OrganizerItem.toSerializableForm(): OrganizerItemDetails {
     return OrganizerItemDetails(
         id = id(),

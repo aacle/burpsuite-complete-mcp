@@ -17,6 +17,7 @@ import net.portswigger.mcp.config.McpConfig
 import net.portswigger.mcp.schema.HistoryLimits
 import net.portswigger.mcp.schema.encodeHistoryItem
 import net.portswigger.mcp.schema.toSerializableForm
+import net.portswigger.mcp.schema.toSummaryForm
 import net.portswigger.mcp.security.DataAccessSecurity
 import net.portswigger.mcp.security.DataAccessType
 import net.portswigger.mcp.security.HttpRequestSecurity
@@ -339,6 +340,17 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
         item?.let { encodeHistoryItem(it.toSerializableForm()) } ?: "<No history item with id $id>"
     }
 
+    mcpPaginatedTool<GetProxyHttpHistorySummary>("Displays a compact one-line summary of proxy HTTP history items (id, method, url, status, mime type, notes). Use this to scan many items cheaply, then call get_proxy_http_history_by_id for full detail on interesting ones.") {
+        val allowed = runBlocking {
+            checkDataAccessOrDeny(DataAccessType.HTTP_HISTORY, config, api, "HTTP history")
+        }
+        if (!allowed) {
+            return@mcpPaginatedTool sequenceOf("HTTP history access denied by Burp Suite")
+        }
+
+        api.proxy().history().asSequence().map { it.toSummaryForm() }
+    }
+
     mcpPaginatedTool<GetOrganizerItems>("Displays items within the Organizer tab") {
         val allowed = runBlocking {
             checkDataAccessOrDeny(DataAccessType.ORGANIZER, config, api, "Organizer")
@@ -537,6 +549,9 @@ data class GetProxyHttpHistoryRegex(val regex: String, override val count: Int, 
 
 @Serializable
 data class GetProxyHttpHistoryById(val id: Int)
+
+@Serializable
+data class GetProxyHttpHistorySummary(override val count: Int, override val offset: Int) : Paginated
 
 @Serializable
 data class GetOrganizerItems(override val count: Int, override val offset: Int) : Paginated

@@ -21,7 +21,9 @@ adds a shadow store + UI bridge so your AI agent can:
 - `get_intruder_attack_results` · `create_intruder_attack`
 - `start_crawl` · `start_audit` · `get_scan_status` · `stop_scan` (Professional)
 - `send_http1_request` · `send_http2_request` · `create_repeater_tab(_http2)` · `send_to_intruder`
-- `get_proxy_http_history(_regex/_by_id)` · `get_proxy_websocket_history(_regex)` · `get_organizer_items(_regex)`
+- `get_proxy_http_history(_regex/_by_id/_summary)` · `get_proxy_websocket_history(_regex)` · `get_organizer_items(_regex)`
+- `is_in_scope` · `add_to_scope` · `remove_from_scope` · `get_cookies` · `set_cookie`
+- `set_history_item_notes` · `set_history_item_highlight`
 - `get_scanner_issues` · `generate_collaborator_payload` · `get_collaborator_interactions` (Professional)
 - `output_project/user_options` · `set_project/user_options` · `set_task_execution_engine_state` · `set_proxy_intercept_state`
 - `get/set_active_editor_contents` · `url_encode/decode` · `base64_encode/decode` · `generate_random_string`
