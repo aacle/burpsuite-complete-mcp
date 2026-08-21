@@ -4,13 +4,28 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class HistoryItemJsonTest {
+
+    @BeforeEach
+    fun setUp() {
+        HistoryLimits.maxItemChars = 5_000
+        HistoryLimits.maxFieldChars = 8_000
+    }
+
+    @AfterEach
+    fun tearDown() {
+        HistoryLimits.maxItemChars = 12_000
+        HistoryLimits.maxFieldChars = 8_000
+    }
+
     @Test
     fun `small history items are unchanged`() {
         val item = HttpRequestResponse("request", "response", "notes")
@@ -51,5 +66,18 @@ class HistoryItemJsonTest {
         assertThrows(IllegalStateException::class.java) {
             limitHistoryItemJson("{\"$oversizedKey\":0}")
         }
+    }
+
+    @Test
+    fun `field truncation preserves short response and truncates long request`() {
+        val request = "A".repeat(20_000)
+        val response = "B".repeat(1_000)
+
+        val truncatedRequest = request.truncateField()
+        val truncatedResponse = response.truncateField()
+
+        assertTrue(truncatedRequest.endsWith("... (truncated)"))
+        assertTrue(truncatedRequest.length <= HistoryLimits.maxFieldChars)
+        assertEquals(response, truncatedResponse)
     }
 }

@@ -17,6 +17,8 @@ class McpConfig(storage: PersistedObject, private val logging: Logging) {
     var port by storage.int(9876)
     var requireHttpRequestApproval by storage.boolean(true)
     var requireDataAccessApproval by storage.boolean(true)
+    var historyItemMaxChars by storage.int(12_000)
+    var historyFieldMaxChars by storage.int(8_000)
 
     private var _alwaysAllowHttpHistory by storage.boolean(false)
     var alwaysAllowHttpHistory: Boolean

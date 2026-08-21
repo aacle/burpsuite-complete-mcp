@@ -67,6 +67,8 @@ class ToolsKtTest {
             every { getString("host") } returns "127.0.0.1"
             every { getString("_autoApproveTargets") } returns ""
             every { getInteger("port") } returns testPort
+            every { getInteger("historyItemMaxChars") } returns 12_000
+            every { getInteger("historyFieldMaxChars") } returns 8_000
             every { setBoolean(any(), any()) } returns Unit
             every { setString(any(), any()) } returns Unit
             every { setInteger(any(), any()) } returns Unit
@@ -822,7 +824,7 @@ class ToolsKtTest {
                 ).expectTextContent()
                 val item = Json.parseToJsonElement(text).jsonObject
 
-                assertTrue(text.length <= 5_000)
+                assertTrue(text.length <= 12_000)
                 assertEquals(setOf("request", "response", "notes"), item.keys)
                 assertTrue(item.getValue("request").jsonPrimitive.content.endsWith("... (truncated)"))
                 assertTrue(item.getValue("response").jsonPrimitive.content.endsWith("... (truncated)"))

@@ -39,17 +39,18 @@ fun AuditIssue.toSerializableForm(): IssueDetails {
 
 fun burp.api.montoya.http.message.HttpRequestResponse.toSerializableForm(): HttpRequestResponse {
     return HttpRequestResponse(
-        request = request()?.toString() ?: "<no request>",
-        response = response()?.toString() ?: "<no response>",
+        request = request()?.toString()?.truncateField() ?: "<no request>",
+        response = response()?.toString()?.truncateField() ?: "<no response>",
         notes = annotations().notes()
     )
 }
 
 fun ProxyHttpRequestResponse.toSerializableForm(): HttpRequestResponse {
     return HttpRequestResponse(
-        request = request()?.toString() ?: "<no request>",
-        response = response()?.toString() ?: "<no response>",
-        notes = annotations().notes()
+        request = request()?.toString()?.truncateField() ?: "<no request>",
+        response = response()?.toString()?.truncateField() ?: "<no response>",
+        notes = annotations().notes(),
+        id = id()
     )
 }
 
@@ -57,8 +58,8 @@ fun OrganizerItem.toSerializableForm(): OrganizerItemDetails {
     return OrganizerItemDetails(
         id = id(),
         status = status().displayName(),
-        request = request()?.toString() ?: "<no request>",
-        response = response()?.toString() ?: "<no response>",
+        request = request()?.toString()?.truncateField() ?: "<no request>",
+        response = response()?.toString()?.truncateField() ?: "<no response>",
         notes = annotations().notes()
     )
 }
@@ -116,7 +117,8 @@ enum class AuditIssueConfidence {
 data class HttpRequestResponse(
     val request: String?,
     val response: String?,
-    val notes: String?
+    val notes: String?,
+    val id: Int? = null
 )
 
 @Serializable

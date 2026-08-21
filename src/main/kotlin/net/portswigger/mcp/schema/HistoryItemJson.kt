@@ -7,15 +7,26 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-private const val MAX_HISTORY_ITEM_LENGTH = 5_000
 private const val TRUNCATION_MARKER = "... (truncated)"
+
+/**
+ * Configurable limits for history serialization. Values are synced from [net.portswigger.mcp.config.McpConfig]
+ * when tools are registered, so the per-item and per-field budgets can be tuned from the Burp MCP tab.
+ */
+object HistoryLimits {
+    @Volatile
+    var maxItemChars: Int = 12_000
+
+    @Volatile
+    var maxFieldChars: Int = 8_000
+}
 
 internal inline fun <reified T> encodeHistoryItem(item: T): String =
     limitHistoryItemJson(Json.encodeToString(item))
 
 @PublishedApi
 internal fun limitHistoryItemJson(serialized: String): String {
-    if (serialized.length <= MAX_HISTORY_ITEM_LENGTH) return serialized
+    if (serialized.length <= HistoryLimits.maxItemChars) return serialized
 
     val item = Json.parseToJsonElement(serialized)
     var lowerBound = TRUNCATION_MARKER.length
@@ -28,7 +39,7 @@ internal fun limitHistoryItemJson(serialized: String): String {
             JsonElement.serializer(), item.truncateStringsTo(fieldLimit)
         )
 
-        if (candidate.length <= MAX_HISTORY_ITEM_LENGTH) {
+        if (candidate.length <= HistoryLimits.maxItemChars) {
             best = candidate
             lowerBound = fieldLimit + 1
         } else {
@@ -37,8 +48,22 @@ internal fun limitHistoryItemJson(serialized: String): String {
     }
 
     return checkNotNull(best) {
-        "History item JSON structure exceeds the $MAX_HISTORY_ITEM_LENGTH character limit"
+        "History item JSON structure exceeds the ${HistoryLimits.maxItemChars} character limit"
     }
+}
+
+/**
+ * Truncates a single field (request, response, notes) to [HistoryLimits.maxFieldChars] so that a large
+ * request body does not cause the response to be dropped entirely from the item.
+ */
+internal fun String.truncateField(maxChars: Int = HistoryLimits.maxFieldChars): String {
+    if (length <= maxChars) return this
+
+    var prefixLength = maxChars - TRUNCATION_MARKER.length
+    if (prefixLength > 0 && this[prefixLength - 1].isHighSurrogate() && this[prefixLength].isLowSurrogate()) {
+        prefixLength--
+    }
+    return take(prefixLength) + TRUNCATION_MARKER
 }
 
 private fun JsonElement.truncateStringsTo(maxLength: Int): JsonElement = when (this) {

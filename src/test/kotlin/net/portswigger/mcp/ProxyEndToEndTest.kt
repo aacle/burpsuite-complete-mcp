@@ -43,6 +43,8 @@ class ProxyEndToEndTest {
         every { persistedObject.getBoolean(any()) } returns true
         every { persistedObject.getString(any()) } returns "127.0.0.1"
         every { persistedObject.getInteger("port") } returns testPort
+        every { persistedObject.getInteger("historyItemMaxChars") } returns 12_000
+        every { persistedObject.getInteger("historyFieldMaxChars") } returns 8_000
         every { persistedObject.setBoolean(any(), any()) } returns Unit
         every { persistedObject.setString(any(), any()) } returns Unit
         every { persistedObject.setInteger(any(), any()) } returns Unit

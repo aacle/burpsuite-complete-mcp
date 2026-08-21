@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import net.portswigger.mcp.config.McpConfig
+import net.portswigger.mcp.schema.HistoryLimits
 import net.portswigger.mcp.schema.encodeHistoryItem
 import net.portswigger.mcp.schema.toSerializableForm
 import net.portswigger.mcp.security.DataAccessSecurity
@@ -109,6 +110,9 @@ private fun normalizePrelude(prelude: String): String = prelude
     .replace("\n", "\r\n")      // All LF → proper CRLF
 
 fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
+
+    HistoryLimits.maxItemChars = config.historyItemMaxChars
+    HistoryLimits.maxFieldChars = config.historyFieldMaxChars
 
     mcpTool<SendHttp1Request>("Issues an HTTP/1.1 request and returns the response.") {
         val allowed = runBlocking {
@@ -295,6 +299,8 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
                 }
             }
         }
+
+        registerScanTools(api, config)
     }
 
     mcpPaginatedTool<GetProxyHttpHistory>("Displays items within the proxy HTTP history") {
@@ -319,6 +325,18 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
         val compiledRegex = Pattern.compile(regex)
         api.proxy().history { it.contains(compiledRegex) }.asSequence()
             .map { encodeHistoryItem(it.toSerializableForm()) }
+    }
+
+    mcpTool<GetProxyHttpHistoryById>("Displays a single item from the proxy HTTP history by its Burp request id.") {
+        val allowed = runBlocking {
+            checkDataAccessOrDeny(DataAccessType.HTTP_HISTORY, config, api, "HTTP history")
+        }
+        if (!allowed) {
+            return@mcpTool "HTTP history access denied by Burp Suite"
+        }
+
+        val item = api.proxy().history { it.id() == id }.firstOrNull()
+        item?.let { encodeHistoryItem(it.toSerializableForm()) } ?: "<No history item with id $id>"
     }
 
     mcpPaginatedTool<GetOrganizerItems>("Displays items within the Organizer tab") {
@@ -403,6 +421,7 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
     }
 
     registerRepeaterTools(api, config)
+    registerIntruderTools(api, config)
 }
 
 fun getActiveEditor(api: MontoyaApi): JTextArea? {
@@ -513,6 +532,9 @@ data class GetProxyHttpHistory(override val count: Int, override val offset: Int
 
 @Serializable
 data class GetProxyHttpHistoryRegex(val regex: String, override val count: Int, override val offset: Int) : Paginated
+
+@Serializable
+data class GetProxyHttpHistoryById(val id: Int)
 
 @Serializable
 data class GetOrganizerItems(override val count: Int, override val offset: Int) : Paginated
