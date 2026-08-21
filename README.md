@@ -11,10 +11,20 @@ The Montoya API exposes **no read access** to Repeater or Intruder — the offic
 adds a shadow store + UI bridge so your AI agent can:
 
 - **Read** a tester's live Repeater tabs (request *and* response), then mutate and resend from that tab
-- **Drive Intruder** with inline payload lists, and read attack status + results
-- **Run crawls, audits and active scans** and poll their status/issues
-- Read the **site map**, **scope**, **notes**, and **cookie jar**
-- Use **Streamable HTTP / SSE / stdio** transport with optional API-key auth
+- **Read Intruder results** from a traffic shadow store (the official server can only send to Intruder)
+- **Run crawls and active audits**, poll scan status, and stop scans
+- **Fetch proxy history by request id**, with configurable truncation that no longer drops responses
+
+## Tools
+
+- `list_repeater_tabs` · `read_repeater_tab_request` · `read_repeater_tab_response` · `send_repeater_request`
+- `get_intruder_attack_results`
+- `start_crawl` · `start_audit` · `get_scan_status` · `stop_scan` (Professional)
+- `send_http1_request` · `send_http2_request` · `create_repeater_tab(_http2)` · `send_to_intruder`
+- `get_proxy_http_history(_regex/_by_id)` · `get_proxy_websocket_history(_regex)` · `get_organizer_items(_regex)`
+- `get_scanner_issues` · `generate_collaborator_payload` · `get_collaborator_interactions` (Professional)
+- `output_project/user_options` · `set_project/user_options` · `set_task_execution_engine_state` · `set_proxy_intercept_state`
+- `get/set_active_editor_contents` · `url_encode/decode` · `base64_encode/decode` · `generate_random_string`
 
 See [`SPEC.md`](SPEC.md) for the full design and tool catalog, and [`docs/BUGFIXES.md`](docs/BUGFIXES.md) for the upstream bugs fixed.
 
@@ -25,8 +35,8 @@ See [`SPEC.md`](SPEC.md) for the full design and tool catalog, and [`docs/BUGFIX
 **GitHub Releases (available immediately):** download `burpsuite-complete-mcp-all.jar` from
 [Releases](../../releases), then *Extensions → Add → Java → Select file*.
 
-Then use the in-extension **MCP** tab to one-click configure your client (Claude Desktop/Code, OpenCode,
-Copilot CLI, Codex, VS Code, Cline), or point any MCP client at `http://127.0.0.1:9876` (SSE).
+Then use the in-extension **MCP** tab to one-click configure your client (Claude Desktop, OpenCode,
+Copilot CLI, Codex CLI), or point any MCP client at `http://127.0.0.1:9876` (SSE) or use the packaged stdio proxy.
 
 ## Build from source
 
