@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.3.0] - 2026-08-21
+
+### Fixed
+- **Repeater read-back is now reliable.** Replaced the non-functional Swing UI bridge with a `RepeaterTabStore` that records every tab the MCP stages (request + response). `list_repeater_tabs` / `read_repeater_tab_request` / `read_repeater_tab_response` now return the exact per-tab content instead of falling back to the last exchange. `create_repeater_tab` now returns the tab name it used.
+
 ## [2.2.0] - 2026-08-21
 
 ### Added

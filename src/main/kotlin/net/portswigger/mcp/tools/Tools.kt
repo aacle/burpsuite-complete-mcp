@@ -22,6 +22,7 @@ import net.portswigger.mcp.security.DataAccessSecurity
 import net.portswigger.mcp.security.DataAccessType
 import net.portswigger.mcp.security.HttpRequestSecurity
 import net.portswigger.mcp.security.filterConfigCredentials
+import net.portswigger.mcp.shadow.RepeaterTabStore
 import java.awt.KeyboardFocusManager
 import java.util.regex.Pattern
 import javax.swing.JTextArea
@@ -60,6 +61,31 @@ private fun buildHttp2HeaderList(
     }
 
     return (fixedPseudoHeaders + headers).map { HttpHeader.httpHeader(it.key.lowercase(), it.value) }
+}
+
+private fun deriveTabName(content: String): String {
+    val firstLine = content.lineSequence().firstOrNull { it.isNotBlank() }?.trim() ?: return "repeater-tab"
+    val parts = firstLine.split(Regex("\\s+"))
+    return if (parts.size >= 2) "${parts[0]} ${parts[1]}" else firstLine.take(40)
+}
+
+private fun deriveHttp2TabName(pseudoHeaders: Map<String, String>): String {
+    val method = pseudoHeaders[":method"] ?: pseudoHeaders["method"] ?: "GET"
+    val path = pseudoHeaders[":path"] ?: pseudoHeaders["path"] ?: "/"
+    return "$method $path"
+}
+
+private fun buildHttp2Display(
+    pseudoHeaders: Map<String, String>, headers: Map<String, String>, body: String
+): String = buildString {
+    pseudoHeaders.forEach { (key, value) ->
+        appendLine("${if (key.startsWith(":")) key else ":$key"}: $value")
+    }
+    headers.forEach { (key, value) -> appendLine("$key: $value") }
+    if (body.isNotBlank()) {
+        appendLine()
+        append(body)
+    }
 }
 
 /**
@@ -171,16 +197,22 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
         response?.toString() ?: "<no response>"
     }
 
-    mcpUnitTool<CreateRepeaterTab>("Creates an HTTP/1.1 Repeater tab with the specified raw HTTP request and optional tab name. Make sure to use carriage returns appropriately. Prefer create_repeater_tab_http2 for modern web targets that speak HTTP/2.") {
+    mcpTool<CreateRepeaterTab>("Creates an HTTP/1.1 Repeater tab with the specified raw HTTP request and optional tab name. Make sure to use carriage returns appropriately. Prefer create_repeater_tab_http2 for modern web targets that speak HTTP/2.") {
         val fixedContent = normalizeHttpContent(content)
         val request = HttpRequest.httpRequest(toMontoyaService(), fixedContent)
-        if (tabName == null) api.repeater().sendToRepeater(request) else api.repeater().sendToRepeater(request, tabName)
+        val name = tabName ?: deriveTabName(fixedContent)
+        api.repeater().sendToRepeater(request, name)
+        RepeaterTabStore.record(name, fixedContent, null, "1.1")
+        "Staged Repeater tab '$name' (HTTP/1.1). Use read_repeater_tab_request(\"$name\") to read it back."
     }
 
-    mcpUnitTool<CreateRepeaterTabHttp2>("Creates an HTTP/2 Repeater tab with the specified HTTP/2 request and optional tab name. Use this by default for modern web targets. Do NOT pass headers to the body parameter.") {
+    mcpTool<CreateRepeaterTabHttp2>("Creates an HTTP/2 Repeater tab with the specified HTTP/2 request and optional tab name. Use this by default for modern web targets. Do NOT pass headers to the body parameter.") {
         val headerList = buildHttp2HeaderList(pseudoHeaders, headers)
         val request = HttpRequest.http2Request(toMontoyaService(), headerList, requestBody)
-        if (tabName == null) api.repeater().sendToRepeater(request) else api.repeater().sendToRepeater(request, tabName)
+        val name = tabName ?: deriveHttp2TabName(pseudoHeaders)
+        api.repeater().sendToRepeater(request, name)
+        RepeaterTabStore.record(name, buildHttp2Display(pseudoHeaders, headers, requestBody), null, "2")
+        "Staged Repeater tab '$name' (HTTP/2). Use read_repeater_tab_request(\"$name\") to read it back."
     }
 
     mcpUnitTool<SendToIntruder>("Sends an HTTP request to Intruder with the specified HTTP request and optional tab name. Make sure to use carriage returns appropriately.") {

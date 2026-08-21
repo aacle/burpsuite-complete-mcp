@@ -8,64 +8,53 @@ import kotlinx.serialization.Serializable
 import net.portswigger.mcp.config.McpConfig
 import net.portswigger.mcp.security.HttpRequestSecurity
 import net.portswigger.mcp.shadow.ExchangeShadowStore
-import net.portswigger.mcp.shadow.RepeaterUiBridge
+import net.portswigger.mcp.shadow.RepeaterTabStore
 
 fun Server.registerRepeaterTools(api: MontoyaApi, config: McpConfig) {
 
-    val uiBridge = RepeaterUiBridge(api)
+    mcpTool<ListRepeaterTabs>("Lists the Repeater tabs staged by this MCP server, each with the exact request and (if it was sent) its response. Also lists Repeater traffic sent from Burp's UI, which is captured without tab names because Burp exposes no Repeater read API.") {
+        val staged = RepeaterTabStore.list().take(limit)
+        val uiExchanges = ExchangeShadowStore.list(toolType = "REPEATER", limit = limit)
 
-    mcpTool<ListRepeaterTabs>("Lists the Repeater tabs currently open in Burp, including the current request and response text of each tab when it can be read from the UI. Also includes recent Repeater exchanges recorded by the shadow store.") {
-        val uiTabs = uiBridge.listTabs()
-        val exchanges = ExchangeShadowStore.list(toolType = "REPEATER", limit = limit)
-
-        val uiSection = if (uiTabs.isEmpty()) {
-            "(No tabs readable via the UI — falling back to shadow-store exchanges only.)"
+        val stagedSection = if (staged.isEmpty()) {
+            "(No tabs staged by this MCP server yet.)"
         } else {
-            uiTabs.joinToString("\n\n") { tab ->
+            staged.joinToString("\n\n") { t ->
                 buildString {
-                    appendLine("Tab: ${tab.name}")
-                    tab.request?.let { appendLine("Request:\n$it") }
-                    tab.response?.let { appendLine("Response:\n$it") }
+                    appendLine("Tab: ${t.name} [HTTP/${t.httpVersion}]")
+                    appendLine("Request:\n${t.request}")
+                    appendLine(t.response?.let { "Response:\n$it" } ?: "Response: (not sent)")
                 }.trimEnd()
             }
         }
 
-        val shadowSection = if (exchanges.isEmpty()) {
-            "(No Repeater exchanges recorded yet.)"
+        val uiSection = if (uiExchanges.isEmpty()) {
+            "(No Repeater traffic sent from the UI recorded.)"
         } else {
-            exchanges.joinToString("\n\n") { e ->
+            uiExchanges.joinToString("\n\n") { e ->
                 buildString {
-                    appendLine("id=${e.id} ${e.method} ${e.url} -> ${e.statusCode}")
+                    appendLine("UI Repeater: ${e.method} ${e.url} -> ${e.statusCode}")
                     appendLine("Request:\n${e.request}")
                     appendLine("Response:\n${e.response}")
                 }.trimEnd()
             }
         }
 
-        "=== Repeater tabs (UI) ===\n$uiSection\n\n=== Recent Repeater exchanges (shadow store) ===\n$shadowSection"
+        "=== Repeater tabs staged by MCP ===\n$stagedSection\n\n=== Repeater traffic sent from Burp's UI ===\n$uiSection"
     }
 
-    mcpTool<ReadRepeaterTabRequest>("Reads the current request in a Repeater tab by name. Falls back to the most recent Repeater exchange recorded by the shadow store if the tab text cannot be read from the UI.") {
-        val ui = uiBridge.findTab(tabName)
-        if (ui?.request != null) {
-            ui.request
-        } else {
-            ExchangeShadowStore.latest(toolType = "REPEATER")?.request
-                ?: "<No request found for Repeater tab '$tabName'>"
-        }
+    mcpTool<ReadRepeaterTabRequest>("Reads back the request staged in a Repeater tab by this MCP server, by exact tab name. Burp exposes no API to read tabs a human typed manually, so only tabs this server staged (and sent traffic captured in the shadow store) are readable.") {
+        RepeaterTabStore.find(tabName)?.request
+            ?: "<No tab '$tabName' staged by this MCP server. Use list_repeater_tabs to see staged tabs, or check the shadow store for traffic sent from the UI.>"
     }
 
-    mcpTool<ReadRepeaterTabResponse>("Reads the current response in a Repeater tab by name. Falls back to the most recent Repeater exchange recorded by the shadow store if the tab text cannot be read from the UI.") {
-        val ui = uiBridge.findTab(tabName)
-        if (ui?.response != null) {
-            ui.response
-        } else {
-            ExchangeShadowStore.latest(toolType = "REPEATER")?.response
-                ?: "<No response found for Repeater tab '$tabName'>"
-        }
+    mcpTool<ReadRepeaterTabResponse>("Reads back the response of a Repeater tab staged and sent by this MCP server, by exact tab name.") {
+        val tab = RepeaterTabStore.find(tabName)
+            ?: return@mcpTool "<No tab '$tabName' staged by this MCP server.>"
+        tab.response ?: "<Tab '$tabName' has been staged but not sent - no response yet.>"
     }
 
-    mcpTool<SendRepeaterRequest>("Sends a raw HTTP/1.1 request and returns the response, and also stages the request in a Repeater tab under the given name (defaults to the target host). Use this after read_repeater_tab_request to mutate and resend a tester's request.") {
+    mcpTool<SendRepeaterRequest>("Sends a raw HTTP/1.1 request, returns the response, and stages the request in a Repeater tab under the given name (defaults to the target host). The staged request and response are recorded so read_repeater_tab_request/response can read them back by name.") {
         val fixedContent = normalizeHttpContent(content)
         val requestDisplay = fixedContent
 
@@ -83,7 +72,10 @@ fun Server.registerRepeaterTools(api: MontoyaApi, config: McpConfig) {
         val resolvedTabName = tabName ?: targetHostname
         api.repeater().sendToRepeater(request, resolvedTabName)
 
-        response?.toString() ?: "<no response>"
+        val responseText = response?.toString()
+        RepeaterTabStore.record(resolvedTabName, fixedContent, responseText, "1.1")
+
+        responseText ?: "<no response>"
     }
 }
 

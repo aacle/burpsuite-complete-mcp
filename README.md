@@ -10,7 +10,8 @@ The Montoya API exposes **no read access** to Repeater or Intruder — the offic
 *send* to these tools, never read what a human tester is doing in them. **Burp Suite Complete MCP**
 adds a shadow store + UI bridge so your AI agent can:
 
-- **Read** a tester's live Repeater tabs (request *and* response), then mutate and resend from that tab
+- **Read back** the Repeater tabs it stages (request + response, by name), then mutate and resend
+  (note: Burp exposes no API to read tabs a human typed by hand — their *sent* traffic is still captured)
 - **Stage Intruder attacks** with payload positions preserved (fixes the "payload stubs ignored" bug), then read results
 - **Run crawls and active audits**, poll scan status, and stop scans
 - **Fetch proxy history by request id**, with configurable truncation that no longer drops responses
