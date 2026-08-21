@@ -13,7 +13,7 @@ class TrafficPanel : TablePanel("Traffic", arrayOf("Time", "Source", "Method", "
     }
 
     override fun refresh() {
-        val rows = ExchangeShadowStore.list(toolType = null, limit = 300).map { e ->
+        val rows = ExchangeShadowStore.listMetadata(limit = 300).map { e ->
             arrayOf<Any?>(
                 formatTimestamp(e.timestamp),
                 e.toolType,

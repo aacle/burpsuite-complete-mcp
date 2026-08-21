@@ -64,6 +64,7 @@ class ToolsKtTest {
             every { getBoolean("_alwaysAllowHttpHistory") } returns false
             every { getBoolean("_alwaysAllowWebSocketHistory") } returns false
             every { getBoolean("_alwaysAllowOrganizer") } returns false
+            every { getBoolean("_alwaysAllowCookies") } returns false
             every { getString("host") } returns "127.0.0.1"
             every { getString("_autoApproveTargets") } returns ""
             every { getInteger("port") } returns testPort

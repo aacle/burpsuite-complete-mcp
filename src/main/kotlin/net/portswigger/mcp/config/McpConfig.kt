@@ -50,6 +50,16 @@ class McpConfig(storage: PersistedObject, private val logging: Logging) {
             }
         }
 
+    private var _alwaysAllowCookies by storage.boolean(false)
+    var alwaysAllowCookies: Boolean
+        get() = _alwaysAllowCookies
+        set(value) {
+            if (_alwaysAllowCookies != value) {
+                _alwaysAllowCookies = value
+                notifyDataAccessChanged()
+            }
+        }
+
     var filterConfigCredentials by storage.boolean(true)
 
     private var _autoApproveTargets by storage.stringList("")

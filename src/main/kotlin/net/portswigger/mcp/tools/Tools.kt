@@ -77,14 +77,27 @@ private fun deriveHttp2TabName(pseudoHeaders: Map<String, String>): String {
 
 private fun buildHttp2Display(
     pseudoHeaders: Map<String, String>, headers: Map<String, String>, body: String
-): String = buildString {
-    pseudoHeaders.forEach { (key, value) ->
-        appendLine("${if (key.startsWith(":")) key else ":$key"}: $value")
+): String {
+    val orderedPseudoHeaderNames = listOf(":scheme", ":method", ":path", ":authority")
+
+    val orderedPseudo = LinkedHashMap<String, String>().apply {
+        orderedPseudoHeaderNames.forEach { name ->
+            val value = pseudoHeaders[name.removePrefix(":")] ?: pseudoHeaders[name]
+            if (value != null) put(name, value)
+        }
+        pseudoHeaders.forEach { (key, value) ->
+            val properKey = if (key.startsWith(":")) key else ":$key"
+            if (!containsKey(properKey)) put(properKey, value)
+        }
     }
-    headers.forEach { (key, value) -> appendLine("$key: $value") }
-    if (body.isNotBlank()) {
-        appendLine()
-        append(body)
+
+    return buildString {
+        orderedPseudo.forEach { (key, value) -> appendLine("$key: $value") }
+        headers.forEach { (key, value) -> appendLine("$key: $value") }
+        if (body.isNotBlank()) {
+            appendLine()
+            append(body)
+        }
     }
 }
 

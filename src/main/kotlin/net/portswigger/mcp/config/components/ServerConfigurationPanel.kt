@@ -18,6 +18,7 @@ class ServerConfigurationPanel(
     private lateinit var alwaysAllowHttpHistoryCheckBox: JCheckBox
     private lateinit var alwaysAllowWebSocketHistoryCheckBox: JCheckBox
     private lateinit var alwaysAllowOrganizerCheckBox: JCheckBox
+    private lateinit var alwaysAllowCookiesCheckBox: JCheckBox
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -86,6 +87,14 @@ class ServerConfigurationPanel(
             config.requireDataAccessApproval
         ) { config.alwaysAllowOrganizer = it }
         add(alwaysAllowOrganizerCheckBox)
+        add(createVerticalStrut(Design.Spacing.SM))
+
+        alwaysAllowCookiesCheckBox = createIndentedCheckBox(
+            "Always allow Cookie jar access",
+            config.alwaysAllowCookies,
+            config.requireDataAccessApproval
+        ) { config.alwaysAllowCookies = it }
+        add(alwaysAllowCookiesCheckBox)
         add(createVerticalStrut(Design.Spacing.MD))
 
         val filterConfigCredentialsCheckBox = createCheckBoxWithSubtitle(
@@ -121,13 +130,16 @@ class ServerConfigurationPanel(
                 config.alwaysAllowHttpHistory = false
                 config.alwaysAllowWebSocketHistory = false
                 config.alwaysAllowOrganizer = false
+                config.alwaysAllowCookies = false
                 alwaysAllowHttpHistoryCheckBox.isSelected = false
                 alwaysAllowWebSocketHistoryCheckBox.isSelected = false
                 alwaysAllowOrganizerCheckBox.isSelected = false
+                alwaysAllowCookiesCheckBox.isSelected = false
             }
             alwaysAllowHttpHistoryCheckBox.isEnabled = enabled
             alwaysAllowWebSocketHistoryCheckBox.isEnabled = enabled
             alwaysAllowOrganizerCheckBox.isEnabled = enabled
+            alwaysAllowCookiesCheckBox.isEnabled = enabled
         }
     }
 
@@ -136,6 +148,7 @@ class ServerConfigurationPanel(
             alwaysAllowHttpHistoryCheckBox.isSelected = config.alwaysAllowHttpHistory
             alwaysAllowWebSocketHistoryCheckBox.isSelected = config.alwaysAllowWebSocketHistory
             alwaysAllowOrganizerCheckBox.isSelected = config.alwaysAllowOrganizer
+            alwaysAllowCookiesCheckBox.isSelected = config.alwaysAllowCookies
         }
     }
 

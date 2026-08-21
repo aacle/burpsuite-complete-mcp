@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.3.1] - 2026-08-21
+
+Expert-review fixes:
+
+### Fixed
+- **Shadow store memory/perf**: captured request/response bodies are now truncated at 8k chars each; orphaned pending entries (responses that never arrive) are evicted after 5 minutes; new `listMetadata()` lets the Traffic tab poll without copying bodies.
+- **`get_cookies` domain filter was advertised but never implemented** — now filters by exact domain.
+- **Scan tasks**: `ScanTaskRegistry.list()` no longer throws every 2s on stopped/deleted tasks; new safe `stop()` shared by the tool and the Scans tab Stop button.
+
+### Security
+- **Active scans now require host approval** — `start_crawl`/`start_audit` pass every seed URL through the same approval gate as request sends (previously they scanned any host unapproved), and all seed URLs are validated before anything starts.
+- **Cookie jar reads are gated** behind a new Cookie-jar data-access approval (with its own "Always allow" toggle in the MCP tab), matching history/organizer gating.
+
 ## [2.3.0] - 2026-08-21
 
 ### Fixed

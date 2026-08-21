@@ -2,8 +2,11 @@ package net.portswigger.mcp.tools
 
 import burp.api.montoya.MontoyaApi
 import io.modelcontextprotocol.kotlin.sdk.server.Server
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import net.portswigger.mcp.config.McpConfig
+import net.portswigger.mcp.security.DataAccessSecurity
+import net.portswigger.mcp.security.DataAccessType
 import java.time.ZonedDateTime
 
 fun Server.registerScopeSessionTools(api: MontoyaApi, config: McpConfig) {
@@ -26,10 +29,20 @@ fun Server.registerScopeSessionTools(api: MontoyaApi, config: McpConfig) {
         "Removed $url from scope"
     }
 
-    mcpTool<GetCookies>("Returns the cookies currently in Burp's cookie jar. Use this to understand the session state for authenticated testing. Note: cookie values may be sensitive.") {
-        val cookies = api.http().cookieJar().cookies()
+    mcpTool<GetCookies>("Returns the cookies currently in Burp's cookie jar, optionally filtered by an exact domain match. Use this to understand session state for authenticated testing. Requires Cookie jar access approval; values may be sensitive.") {
+        val allowed = runBlocking {
+            DataAccessSecurity.checkDataAccessPermission(DataAccessType.COOKIES, config)
+        }
+        if (!allowed) {
+            return@mcpTool "Cookie jar access denied by Burp Suite"
+        }
+
+        val cookies = api.http().cookieJar().cookies().filter { cookie ->
+            domain == null || cookie.domain().equals(domain, ignoreCase = true)
+        }
+
         if (cookies.isEmpty()) {
-            "<No cookies in the jar>"
+            if (domain == null) "<No cookies in the jar>" else "<No cookies for domain '$domain'>"
         } else {
             cookies.joinToString("\n") { c ->
                 "${c.name()}=${c.value()}  domain=${c.domain()} path=${c.path()}"

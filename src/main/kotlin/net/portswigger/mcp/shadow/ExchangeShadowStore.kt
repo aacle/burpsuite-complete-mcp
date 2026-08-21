@@ -10,12 +10,22 @@ import burp.api.montoya.http.handler.ResponseReceivedAction
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
+internal const val MAX_CAPTURED_BODY_CHARS = 8_000
+private const val PENDING_TTL_MS = 5 * 60_000L
+
+internal fun truncateCapturedBody(text: String): String =
+    if (text.length <= MAX_CAPTURED_BODY_CHARS) {
+        text
+    } else {
+        text.take(MAX_CAPTURED_BODY_CHARS) + "...(truncated)"
+    }
+
 /**
- * Records every HTTP exchange that flows through Burp's HTTP engine — Proxy, Repeater,
+ * Records HTTP exchanges that flow through Burp's HTTP engine — Proxy, Repeater,
  * Intruder, Scanner, and this extension's own MCP sends — into a bounded in-memory ring.
  *
- * This is the only reliable way to make a human tester's live Repeater/Intruder work visible
- * to an AI client, because the Montoya API exposes no read access to those tools.
+ * Bodies are truncated at capture time ([MAX_CAPTURED_BODY_CHARS]) so a busy proxy cannot blow up
+ * the heap, and [listMetadata] lets the UI poll without copying bodies.
  *
  * Source is tagged via [HttpRequestToBeSent.toolSource] ([burp.api.montoya.core.ToolType]),
  * and request/response pairs are correlated by their shared message id.
@@ -29,6 +39,16 @@ data class ExchangeRecord(
     val statusCode: Int,
     val request: String?,
     val response: String?,
+    val timestamp: Long,
+)
+
+/** Lightweight view for live UI polling — no bodies. */
+data class ExchangeMetadata(
+    val id: Long,
+    val toolType: String,
+    val method: String,
+    val url: String,
+    val statusCode: Int,
     val timestamp: Long,
 )
 
@@ -60,13 +80,14 @@ object ExchangeShadowStore {
         registration = api.http().registerHttpHandler(object : HttpHandler {
             override fun handleHttpRequestToBeSent(requestToBeSent: HttpRequestToBeSent): RequestToBeSentAction {
                 try {
+                    evictStalePending()
                     val toolType = requestToBeSent.toolSource()?.toolType()?.name ?: "UNKNOWN"
                     pending[requestToBeSent.messageId()] = PendingRequest(
                         messageId = requestToBeSent.messageId(),
                         toolType = toolType,
                         url = requestToBeSent.url(),
                         method = requestToBeSent.method(),
-                        request = requestToBeSent.toString(),
+                        request = truncateCapturedBody(requestToBeSent.toString()),
                         timestamp = System.currentTimeMillis(),
                     )
                 } catch (e: Exception) {
@@ -88,7 +109,7 @@ object ExchangeShadowStore {
                                 method = request.method,
                                 statusCode = responseReceived.statusCode().toInt(),
                                 request = request.request,
-                                response = responseReceived.toString(),
+                                response = truncateCapturedBody(responseReceived.toString()),
                                 timestamp = request.timestamp,
                             )
                         )
@@ -111,6 +132,12 @@ object ExchangeShadowStore {
         synchronized(lock) { exchanges.clear() }
     }
 
+    private fun evictStalePending() {
+        if (pending.isEmpty()) return
+        val cutoff = System.currentTimeMillis() - PENDING_TTL_MS
+        pending.entries.removeIf { it.value.timestamp < cutoff }
+    }
+
     private fun add(record: ExchangeRecord) {
         synchronized(lock) {
             exchanges.addLast(record)
@@ -126,6 +153,26 @@ object ExchangeShadowStore {
             .take(limit)
             .toList()
     }
+
+    fun listMetadata(toolType: String? = null, limit: Int = 300): List<ExchangeMetadata> =
+        synchronized(lock) {
+            exchanges
+                .asReversed()
+                .asSequence()
+                .filter { toolType == null || it.toolType == toolType }
+                .take(limit)
+                .map {
+                    ExchangeMetadata(
+                        id = it.id,
+                        toolType = it.toolType,
+                        method = it.method,
+                        url = it.url,
+                        statusCode = it.statusCode,
+                        timestamp = it.timestamp
+                    )
+                }
+                .toList()
+        }
 
     fun latest(toolType: String? = null): ExchangeRecord? = synchronized(lock) {
         exchanges.lastOrNull { toolType == null || it.toolType == toolType }

@@ -25,7 +25,8 @@ class ScansPanel : TablePanel("Scans", arrayOf("Task", "Status", "Requests", "Er
                 if (row >= 0) {
                     val taskId = (table.getValueAt(row, 0) as? Number)?.toLong()
                     if (taskId != null) {
-                        ScanTaskRegistry.remove(taskId)?.delete()
+                        ScanTaskRegistry.stop(taskId)
+                        refresh()
                     }
                 }
             }
