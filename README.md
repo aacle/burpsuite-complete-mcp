@@ -11,14 +11,14 @@ The Montoya API exposes **no read access** to Repeater or Intruder — the offic
 adds a shadow store + UI bridge so your AI agent can:
 
 - **Read** a tester's live Repeater tabs (request *and* response), then mutate and resend from that tab
-- **Stage Intruder attacks** with payload positions and custom payloads (via the "MCP Payloads" generator), then read results
+- **Stage Intruder attacks** with payload positions preserved (fixes the "payload stubs ignored" bug), then read results
 - **Run crawls and active audits**, poll scan status, and stop scans
 - **Fetch proxy history by request id**, with configurable truncation that no longer drops responses
 
 ## Tools
 
 - `list_repeater_tabs` · `read_repeater_tab_request` · `read_repeater_tab_response` · `send_repeater_request`
-- `get_intruder_attack_results` · `create_intruder_attack` · `set_intruder_payloads`
+- `get_intruder_attack_results` · `create_intruder_attack`
 - `start_crawl` · `start_audit` · `get_scan_status` · `stop_scan` (Professional)
 - `send_http1_request` · `send_http2_request` · `create_repeater_tab(_http2)` · `send_to_intruder`
 - `get_proxy_http_history(_regex/_by_id)` · `get_proxy_websocket_history(_regex)` · `get_organizer_items(_regex)`
