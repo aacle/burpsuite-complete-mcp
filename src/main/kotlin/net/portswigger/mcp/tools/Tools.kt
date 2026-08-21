@@ -131,6 +131,8 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
         val request = HttpRequest.httpRequest(toMontoyaService(), fixedContent)
         val response = api.http().sendRequest(request)
 
+        response?.let { api.siteMap().add(it) }
+
         response?.toString() ?: "<no response>"
     }
 
@@ -163,6 +165,8 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
 
         val request = HttpRequest.http2Request(toMontoyaService(), headerList, requestBody)
         val response = api.http().sendRequest(request, HttpMode.HTTP_2)
+
+        response?.let { api.siteMap().add(it) }
 
         response?.toString() ?: "<no response>"
     }
@@ -436,6 +440,7 @@ fun Server.registerTools(api: MontoyaApi, config: McpConfig) {
     registerIntruderTools(api, config)
     registerScopeSessionTools(api, config)
     registerAnnotationTools(api, config)
+    registerSitemapVerificationTools(api, config)
 }
 
 fun getActiveEditor(api: MontoyaApi): JTextArea? {
